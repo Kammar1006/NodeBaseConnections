@@ -3,20 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title> Title </title>
 </head>
 <body>
     
     <h1> Hello World </h1>
 
-
-
+    <!-- Example Form for searching places using name -->
+    <form id="form_1">
+        <p>
+            <span> Place Name </span>
+            <br>
+            <input id="form_1_name" value=""/>
+            <br>
+            <input id="form_1_button" type="submit" value="search"/>
+        </p>
+    </form>
+    <p id="places_list">  </p>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         (() => {
             const sock = io();
+
+            //get data from backend
+            sock.on("places", (places) => {
+                console.log(places); //show in console
+                document.querySelector("#places_list").innerHTML = JSON.stringify(places);
+            });
+
+
+            //send info to backend - form 1
+            document
+                .querySelector("#form_1_button")
+                .addEventListener('click', (e) => {
+                    let name = document.querySelector("#form_1_name").value;
+                    sock.emit("searchByName", name);
+                });
+    
         })();
+
+        //not reload site when click form
+        document
+            .querySelector("#form_1")
+            .addEventListener('submit', (e) => {
+                e.preventDefault();
+            });
+    
     </script>
 </body>
 </html>
