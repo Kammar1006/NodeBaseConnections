@@ -11,6 +11,7 @@ const http = require('http');
 const socketio = require('socket.io');
 
 const db = (opt.db_on) ? require('./db.js') : false;
+const bcrypt = require("bcrypt");
 
 const app = express();
 app.use(express.static(`${__dirname}/../frontend`));
@@ -70,7 +71,7 @@ io.on('connection', (sock) => {
 	//login:
 	sock.on("login", (login, pass) => {
 		if(!db) return;
-		if(!(isAlnum(log) && isAlnum(pass))) return;
+		if(!(isAlnum(login) && isAlnum(pass))) return;
 
 		db.query("SELECT * FROM users WHERE login ='"+login+"'", (err, res) => {
 			console.log(err);
@@ -85,7 +86,12 @@ io.on('connection', (sock) => {
 				}
 				else{
 					console.log("Pass NOTOK");
+					sock.emit("login", "Wrong login or password")
 				}
+			}
+			else{
+				console.log("Pass NOTOK");
+				sock.emit("login", "Wrong login or password")
 			}
 		});
 		
@@ -95,31 +101,29 @@ io.on('connection', (sock) => {
 	sock.on("register", (login, pass, pass2, email) => {
 		console.log("Register:", login, pass, pass2, email);
 		if(!db) return;
-
-		if(!(isLen(nick, 3, 20) && isAlnum(nick))){
-			console.log("Nick len ERR");
-			return;
-		}
 		
 		if(!(isEmail(email))){
 			console.log("Email is NOT ok");
+			sock.emit("register", "wrong email format");
 			return;
 		}
 
-		if(!(isLen(log, 4, 20) && isAlnum(log))){
+		if(!(isLen(login, 4, 20) && isAlnum(login))){
 			console.log("Login len ERR");
+			sock.emit("register", "wrong login format/length");
 			return;
 		}
 
 		if(!(isLen(pass, 8, 50) && isAlnum(pass))){
 			console.log("Pass len ERR");
+			sock.emit("register", "wrong pass format/length");
 			return;
 		}
 
 		if(pass === pass2){
 			console.log("All OK!!");
 
-			db.query("SELECT `login`, `email`, FROM `users` WHERE login='"+login+"' OR email='"+email+"' OR user='"+login+"'", (err, res) => {
+			db.query("SELECT `login`, `email` FROM `users` WHERE login='"+login+"' OR email='"+email+"'", (err, res) => {
 				if(res.length){
 					let a=0, b=0;
 					res.forEach(e => {
@@ -128,18 +132,21 @@ io.on('connection', (sock) => {
 					});
 					if(a){
 						console.log("Email is in db");
-						sock.emit("register", "email");
+						sock.emit("register", "email in db");
 					} 
 					if(b){
 						console.log("Login is in db");
-						sock.emit("register", "login");
+						sock.emit("register", "login in db");
 					} 
 				}
 				else{
-					db.query("INSERT INTO `users` (`id`, `login`, `pass`, `email`) VALUES ('', '"+log+"', '"+hasher(pass)+"', '"+email+"')");
+					db.query("INSERT INTO `users` (`id`, `login`, `pass`, `email`) VALUES ('', '"+login+"', '"+hasher(pass)+"', '"+email+"')");
 					sock.emit("register", "register");
 				}
 			});
+		}
+		else{
+			sock.emit("register", "pass != pass2");
 		}
 	});
 
