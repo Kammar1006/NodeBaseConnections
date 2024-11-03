@@ -1,0 +1,6 @@
+[V] Authe
+[V] Autho
+[] Redirection
+[] Rooms / Multicast
+[~] Save db info
+[~] Better Cookie / Session

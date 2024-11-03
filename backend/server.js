@@ -65,8 +65,13 @@ const emit_login_data = (sock, db_stats) => {
 
 io.on('connection', (sock) => {
 	let cid = setCID(sock);
-	if(!cid) return;
+	if(!cid){
+		cid = "A"+Math.floor((Math.random()*1000))+"B"+Math.floor((Math.random()*1000));
+		sock.emit("set-cookie", `${COOKIE_FLAG}=${cid}; Path=/; SameSite=None; Secure`);
+	}
 	setTranslationTab(cid);
+
+	console.log("User: "+cid);
 
 	//login:
 	sock.on("login", (login, pass) => {

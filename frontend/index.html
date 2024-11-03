@@ -1,3 +1,4 @@
+<!-- Created by Kammar1006 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -85,6 +86,11 @@
 
             sock.on("register", (e) => {
                 console.log(e);
+            });
+
+            sock.on("set-cookie", (cookie) => {
+                document.cookie = cookie;  // Ustawienie cookie po stronie klienta
+                console.log("Cookie", cookie);
             });
 
             //send info to backend - form 1

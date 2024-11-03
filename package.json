@@ -7,7 +7,7 @@
   },
   "name": "nodebaseconnections",
   "description": "Frontend, backend and db connection via node, express and socketio",
-  "version": "0.4",
+  "version": "0.5",
   "main": "index.js",
   "devDependencies": {},
   "scripts": {
