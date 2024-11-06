@@ -76,7 +76,7 @@ io.on('connection', (sock) => {
 	console.log("User: "+cid);
 
 	sock.on("counter", () => {
-		
+
 		translationTab[cid].test_counter++;
 		sock.emit("message", "Count: "+translationTab[cid].test_counter);
 	});
@@ -135,8 +135,9 @@ io.on('connection', (sock) => {
 
 		if(pass === pass2){
 			console.log("All OK!!");
-/*
-			db.query("SELECT `login`, `email` FROM `users` WHERE login='"+login+"' OR email='"+email+"'", (err, res) => {
+
+			queryDatabase("SELECT `login`, `email` FROM `users` WHERE login=? OR email=?", [login, email])
+			.then((res) => {
 				if(res.length){
 					let a=0, b=0;
 					res.forEach(e => {
@@ -153,10 +154,12 @@ io.on('connection', (sock) => {
 					} 
 				}
 				else{
-					db.query("INSERT INTO `users` (`id`, `login`, `pass`, `email`) VALUES ('', '"+login+"', '"+hasher(pass)+"', '"+email+"')");
-					sock.emit("register", "register");
+					queryDatabase("INSERT INTO `users` (`id`, `login`, `pass`, `email`) VALUES ('', ?, ?, ?)", [login, hasher(pass), email])
+					.then(() => {
+						sock.emit("register", "register");
+					}).catch((err) => {console.log("DB Error: "+err)});
 				}
-			});*/
+			}).catch((err) => {console.log("DB Error: "+err);});
 		}
 		else{
 			sock.emit("register", "pass != pass2");
@@ -173,11 +176,10 @@ io.on('connection', (sock) => {
 	//for all users searching db
 	sock.on("searchByName", (name) => {
 		if(isAlnum(name)){
-			/*db.query("SELECT * FROM places WHERE name ='"+name+"'", (err, res) => {
-				console.log(err);
-				console.log(res);
+			queryDatabase("SELECT * FROM places WHERE name =?", [name])
+			.then((res) => {
 				sock.emit("places", res);
-			});*/
+			}).catch((err) => {console.log("DB Error: "+err);});
 		}
 	});
 
@@ -197,4 +199,5 @@ io.on('connection', (sock) => {
 
 server.listen(PORT, () => {
 	console.log("Work");
+	
 });
