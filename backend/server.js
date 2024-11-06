@@ -10,7 +10,7 @@ const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
 
-const db = (opt.db_on) ? require('./db.js') : false;
+const {queryDatabase} = require('./db.js');
 const bcrypt = require("bcrypt");
 
 const app = express();
@@ -22,6 +22,7 @@ const io = socketio(server, {
 });
 
 const {isAlnum, isEmail, isLen} = require("./strings_analyzer.js");
+const { randomBytes } = require('crypto');
 
 let translationTab = [];
 const setCID = (sock) => {
@@ -49,6 +50,7 @@ const setTranslationTab = (cid) => {
 		translationTab[cid]={
 			user_id: -1,
 			db_stats: {},
+			test_counter: 0,
 		};
 	}
 }
@@ -66,21 +68,25 @@ const emit_login_data = (sock, db_stats) => {
 io.on('connection', (sock) => {
 	let cid = setCID(sock);
 	if(!cid){
-		cid = "A"+Math.floor((Math.random()*1000))+"B"+Math.floor((Math.random()*1000));
+		cid = randomBytes(30).toString('hex');
 		sock.emit("set-cookie", `${COOKIE_FLAG}=${cid}; Path=/; SameSite=None; Secure`);
 	}
 	setTranslationTab(cid);
 
 	console.log("User: "+cid);
 
+	sock.on("counter", () => {
+		
+		translationTab[cid].test_counter++;
+		sock.emit("message", "Count: "+translationTab[cid].test_counter);
+	});
+
 	//login:
 	sock.on("login", (login, pass) => {
-		if(!db) return;
 		if(!(isAlnum(login) && isAlnum(pass))) return;
 
-		db.query("SELECT * FROM users WHERE login ='"+login+"'", (err, res) => {
-			console.log(err);
-			console.log(res);
+		queryDatabase("SELECT * FROM users WHERE login =?", [login])
+		.then((res) => {
 			if(res && res.length == 1){
 				if(hashCompare(pass, res[0].pass)){
 					console.log("Pass OKOK");
@@ -98,14 +104,16 @@ io.on('connection', (sock) => {
 				console.log("Pass NOTOK");
 				sock.emit("login", "Wrong login or password")
 			}
-		});
+		}).catch((err) => {
+			console.log("DB ERROR: "+err);
+		})
+			
 		
 	});
 
 	//register:
 	sock.on("register", (login, pass, pass2, email) => {
 		console.log("Register:", login, pass, pass2, email);
-		if(!db) return;
 		
 		if(!(isEmail(email))){
 			console.log("Email is NOT ok");
@@ -127,7 +135,7 @@ io.on('connection', (sock) => {
 
 		if(pass === pass2){
 			console.log("All OK!!");
-
+/*
 			db.query("SELECT `login`, `email` FROM `users` WHERE login='"+login+"' OR email='"+email+"'", (err, res) => {
 				if(res.length){
 					let a=0, b=0;
@@ -148,7 +156,7 @@ io.on('connection', (sock) => {
 					db.query("INSERT INTO `users` (`id`, `login`, `pass`, `email`) VALUES ('', '"+login+"', '"+hasher(pass)+"', '"+email+"')");
 					sock.emit("register", "register");
 				}
-			});
+			});*/
 		}
 		else{
 			sock.emit("register", "pass != pass2");
@@ -164,13 +172,12 @@ io.on('connection', (sock) => {
 
 	//for all users searching db
 	sock.on("searchByName", (name) => {
-		if(!db) return;
 		if(isAlnum(name)){
-			db.query("SELECT * FROM places WHERE name ='"+name+"'", (err, res) => {
+			/*db.query("SELECT * FROM places WHERE name ='"+name+"'", (err, res) => {
 				console.log(err);
 				console.log(res);
 				sock.emit("places", res);
-			});
+			});*/
 		}
 	});
 

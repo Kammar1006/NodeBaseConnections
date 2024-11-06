@@ -68,6 +68,7 @@
     </form>
     <p id="register_info">  </p>
     <hr>
+    <input id="clicker" value="click" type="submit"/>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -89,8 +90,12 @@
             });
 
             sock.on("set-cookie", (cookie) => {
-                document.cookie = cookie;  // Ustawienie cookie po stronie klienta
+                document.cookie = cookie;  // Set Cookie in client-site
                 console.log("Cookie", cookie);
+            });
+
+            sock.on("message", (t) => {
+                console.log("message: ", t);
             });
 
             //send info to backend - form 1
@@ -120,7 +125,12 @@
                     let email = document.querySelector("#form_3_email").value;
                     sock.emit("register", login, pass, pass2, email);
                 });
-    
+
+            document
+                .querySelector("#clicker")
+                .addEventListener("click", (e) => {
+                    sock.emit("counter");
+                });
         })();
 
         //not reload site when click form
